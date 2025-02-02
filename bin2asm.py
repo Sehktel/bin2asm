@@ -23,23 +23,33 @@ mem_len = 4096 # 4k memory
 memory = [0x00] * mem_len
 DEBUG = False
 
-def opcode1(address, opcode, b1, b2):
+def opcode1(address, opcode, b0, b1, b2):
     print(f"0x{address:04X} : {opcode[1]}")
 
 
-def opcode2(address, opcode, b1, b2):
+def opcode2(address, opcode, b0, b1, b2):
     tag = opcode[4]
-    match tag:
-        case '':
-            print(f"0x{address:04X} : {opcode[1]} 0x{b1:02X}")
-        case '#':
-            print(f"0x{address:04X} : {opcode[1]}, #0x{b1:02X}")
-        case '/':
-            print(f"0x{address:04X} : {opcode[1]}, /0x{b1:02X}")
+    match opcode[1]:
+        case 'AJMP':
+            # Encoding: a10 a9 a8 0 0 0 0 1   a7 a6 a5 a4 a3 a2 a1 a0
+            long_addr = ((b0 & 0xE0) << 3 | b1) & 0x0FFF
+            print(f"0x{address:04X} : {opcode[1]} 0x{long_addr:04X}")
+        case 'ACALL':
+            # Encoding: a10 a9 a8 0 0 0 0 1   a7 a6 a5 a4 a3 a2 a1 a0
+            long_addr = ((b0 & 0xE0) << 3 | b1) & 0x0FFF
+            print(f"0x{address:04X} : {opcode[1]} 0x{long_addr:04X}")
         case _:
-            print(f"0x{address:04X} : {opcode[1]} 0x{b1:02X}, {tag}")
+            match tag:
+                case '':
+                    print(f"0x{address:04X} : {opcode[1]} 0x{b1:02X}")
+                case '#':
+                    print(f"0x{address:04X} : {opcode[1]}, #0x{b1:02X}")
+                case '/':
+                    print(f"0x{address:04X} : {opcode[1]}, /0x{b1:02X}")
+                case _:
+                    print(f"0x{address:04X} : {opcode[1]} 0x{b1:02X}, {tag}")
 
-def opcode3(address, opcode, b1, b2):
+def opcode3(address, opcode, b0, b1, b2):
     tag = opcode[4]
     match opcode[2]:
         case 1:
@@ -66,11 +76,11 @@ def disasmMemory():
             instruction_len = Instructions_NoCode[memory[i]][0]
             match instruction_len:
                 case 1:
-                    opcode1(i, Instructions_NoCode[memory[i]], 0x00,        0x00)
+                    opcode1(i, Instructions_NoCode[memory[i]], memory[i], 0x00,        0x00)
                 case 2:
-                    opcode2(i, Instructions_NoCode[memory[i]], memory[i+1], 0x00)
+                    opcode2(i, Instructions_NoCode[memory[i]], memory[i], memory[i+1], 0x00)
                 case 3:
-                    opcode3(i, Instructions_NoCode[memory[i]], memory[i+1], memory[i+2])
+                    opcode3(i, Instructions_NoCode[memory[i]], memory[i], memory[i+1], memory[i+2])
             i += instruction_len
         else:
             i += 1
@@ -125,26 +135,3 @@ def parse(file = './test.hex'):
 
 if __name__ == '__main__':
     parse('./ihtfg.hex')
-
-
-
-
-
-
-
-
-
-
-
-
-
-memory = [0] * 4096 # 4K ОЗУ
-
-def parseIntelHex(file):
-    pass
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
